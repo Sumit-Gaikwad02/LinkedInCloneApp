@@ -1,0 +1,78 @@
+package com.clone.controller;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.clone.model.Users;
+import com.clone.securityconfig.CustomUserDetailsService;
+import com.clone.serviceImpl.UsersServiceImpl;
+
+/** Author:Sumit ****/
+
+@RestController
+@RequestMapping("/users")
+
+public class UsersController {
+
+	@Autowired
+	private UsersServiceImpl usersService;
+
+	// register new user********
+	@PostMapping("/register")
+	public ResponseEntity<String> registerUser(@RequestBody Users user) {
+		try {
+			usersService.registerUser(user);
+			return ResponseEntity.ok("User registered successfully. Check your email for OTP.");
+		} catch (Exception e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		}
+	}
+
+	// OTP validation to verify register email*****
+	@GetMapping("/emailOtp")
+	public ResponseEntity<String> verifyOtp(@RequestParam String email, @RequestParam String otp) {
+		System.out.println("got otp");
+		if (usersService.verifyOtp(email, otp)) {
+			System.out.println("verified");
+			return ResponseEntity.ok("OTP verified successfully. User enabled.");
+		} else {
+			return ResponseEntity.badRequest().body("Invalid OTP.");
+		}
+	}
+
+	// create OTP to reset password*****
+	@PostMapping("/forgot-passwordOTP")
+	public ResponseEntity<String> forgotPassword(@RequestParam String userEmail) {
+		usersService.processForgotPassword(userEmail);
+		return ResponseEntity.ok("check email for Otp");
+	}
+
+	// Validate and update Password******
+	@PostMapping("/reset-password")
+	public ResponseEntity<String> resetPassword(@RequestParam String newPassword, @RequestParam String otp) {
+		usersService.processResetPassword(newPassword, otp);
+		return ResponseEntity.ok("Password changed successfully");
+	}
+
+	@GetMapping("/searchBar")
+	public ResponseEntity<List<Users>> searchBar(@RequestParam String name) {
+		List<Users> UserList = usersService.searchBar(name);
+		return ResponseEntity.ok().body(UserList);
+
+	}
+
+}
